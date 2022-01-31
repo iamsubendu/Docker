@@ -1,0 +1,40 @@
+for ubuntu 20.04
+=================
+
+sudo apt install docker.io
+
+
+docker -v 
+=> will give version info 
+
+
+
+sudo systemctl status docker
+=> will give info about docker status
+
+
+
+sudo systemctl enable --now docker
+sudo systemctl enable --now docker
+=> to enable or disable docker
+
+
+Press "q" to exit the command
+
+
+
+"clear" to clear screen
+
+
+
+sudo run docker hello-world
+=> simplest command to check whether docker is 
+running or not
+It will pull hello-world image from docker hub 
+repository if not found locally
+
+
+
+sudo docker images
+=> to check the image present locally
+
