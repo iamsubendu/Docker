@@ -1,0 +1,75 @@
+to check docker version 
+=> docker -v
+
+
+to check we use
+=> sudo docker run docker/whalesay cowsay message
+This command first checks image in local than if 
+not found it pulls from docker hub
+
+
+-------  run - starts a container ---------------------
+if image is not present locally than it will pull image 
+from hub
+=> docker run imageName
+
+------- ps - list containers --------------------------
+will show a lot of info of container
+=> docker ps
+
+
+to check containers running or not
+=> docker ps -a
+
+
+----------- stop - to stop any container ----------------
+=> docker stop containerId/containerName
+
+
+------------ rm - remove a container ---------------------
+=> docker rm containerId/containerName
+
+
+----------- images - list images -------------------------
+=> docker images
+
+----------- rmi - remove images --------------------------
+=> docker rmi imageName
+
+
+------------ pull - download an image --------------------
+to only pull the image and not run the container
+=> docker pull imageName
+
+
+-------------- exec - execute a command ------------------
+executing command on running container
+
+=> docker exec [OPTIONS] CONTAINER COMMAND [ARG...]
+
+
+
+
+
+
+
+
+
+
+
+
+
+* containers are not meant to host OS.
+These are meant to run specific task or processes.
+So as task completes it exits.
+so if we use
+=> docker run ubuntu
+its wont show in 
+=> docker ps
+will show in 
+=> docker ps -a
+i.e, closed
+
+It closes as their is no process running on ubuntu
+so we can add any task to it as
+=> docker run ubuntu sleep 5

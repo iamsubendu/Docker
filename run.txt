@@ -1,0 +1,24 @@
+run 
+---- attach and detach ------------
+
+docker image name developed -> kodecloud/simplewebapp
+
+=> docker run kodecloud/simplewebapp
+its runs in foreground or in attached mode
+i.e, will be attached to console or standard output.
+We wont be able to do anything until this container
+stops.
+
+
+
+so the option its
+
+------------- d - detach ----------------------
+
+docker run -d kodecloud/simplewebapp
+This will run the docker container in the background 
+mode and we will return back to prompt 
+
+if want to attach again
+=> docker attach kodecloud/simplewebapp
+

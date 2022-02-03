@@ -1,0 +1,94 @@
+Docker
+-----------------
+
+issues without Docker
+=> compatibility
+=> long setup time
+=> different dev/test/prod environments
+
+By docker,
+we can run each component in a seprate 
+container with its own dependencies and 
+libraries all on same vm or os.
+
+Containers 
+are completely isolated env.
+as they have their own processes, network &
+mounts.
+
+
+Operating System
+consist of OS kernel and bunch of software.
+OS Kernel is responsible for interacting 
+with underlying hardware.
+So the software makes the OS different.
+
+
+
+
+Docker containers share the underlying 
+kernel.
+This means docker can run any OS as long 
+they are based on the same kernel.
+If underlying OS is ubuntu than docker can 
+run a container based on another distribution
+like Debian, Fedora, centOS.
+ 
+
+
+OS that don't share same kernel as other OS.
+So we won't be able to run a windows based container
+on a docker host with linux on it.
+For this we require Docker on windows server.
+
+
+
+The main purpose of Docker is to package and containerized
+applications and to ship them and to run
+them anywhere any times we want.
+
+
+
+Vm causes higher utilization of resources
+while Its not the same with docker.
+VM also uses huge disk space in GB  whereas 
+docker is lightweight and uses size in MB.
+Boot up is also faster in docker.
+
+
+
+Most org. have their products containerized 
+& available in a public dock or repository.
+
+
+
+
+Image
+----------
+its a package used to create one or more containers.
+
+Containers
+----------
+are running instances of image and have their
+own environments & set up processes.
+
+
+
+
+
+
+Traditionally,
+developer develop the application and than 
+hands it over to devops to deploy and manage 
+it in production environment.
+They do that by providing a set of instructions.
+Since the Ops team didn't develop the application
+on their own they struggle with setting it.
+
+With docker,
+developer and operation team work together to 
+transform the guide into a docker file with both
+of their requirements.
+This docker file is than used to create an image
+of their application and than can be used by any host
+and anywhere.
