@@ -22,3 +22,31 @@ mode and we will return back to prompt
 if want to attach again
 => docker attach kodecloud/simplewebapp
 
+
+
+=======================================================
+
+docker run -it ubuntu
+=> -it stands for interactive
+=> to start a container and interact with it
+=> what we will get is a shell
+=> a shell is a program that takes our command 
+    & passes it to OS
+
+[root@2ecc4cd65705 /]
+root here defines for the User
+After @ its the name of the machine
+/ represents we are in root directory
+# represents we have the highest privileges
+$ represents normal user
+
+
+we can run following in the shell
+=> echo hello-world
+=> whoami
+to see location of shell program
+=> echo $0
+to see all the commands we used till now
+=> history
+we can run same command by than its no After
+=> !<command No>

@@ -1,0 +1,24 @@
+Windows
+
+    C:\ 
+        Program Files
+        Windows
+
+
+=======================================
+
+Linux/Ubuntu
+
+    /        (root directory)
+        bin  (includes binaries or programs)
+        boot (all files related booting)
+        dev  (files that are req. to access devices)
+        etc  (configuration files => editable text configuration)
+        home (home directory)
+        root (home directory for root user & only 
+                    root user can access this directory)
+        lib   (used for keeping libraries)
+        var   (for variable)
+        proc  (running processes)
+
+

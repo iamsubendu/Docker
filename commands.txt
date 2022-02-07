@@ -1,5 +1,7 @@
 to check docker version 
 => docker -v
+=> docker version
+
 
 
 to check we use
@@ -49,15 +51,7 @@ executing command on running container
 
 
 
-
-
-
-
-
-
-
-
-
+=======================================================
 
 * containers are not meant to host OS.
 These are meant to run specific task or processes.
