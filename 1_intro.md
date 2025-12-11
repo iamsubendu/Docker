@@ -1,3 +1,7 @@
+# What is Docker?
+
+Docker is a platform that lets you **package an application with everything it needs** (code, runtime, dependencies, configs) into a portable container, so it runs the same way on any machine that has Docker installed.
+
 # Why do you need Docker?
 
 Because Docker makes it easy to run your application anywhere without setup issues.
@@ -162,3 +166,44 @@ A company like Netflix might run **thousands of containers** across **hundreds o
 - Balances load across all containers
 
 **The bottom line:** Orchestration tools like Kubernetes act as the "traffic controller" for containers, automatically managing where they run, how many run, and keeping everything healthy — so humans don't have to manually manage each container!
+
+## Docker containers share the host kernel
+
+- Containers run in **user space** and **reuse the host's kernel**; they do not ship their own kernel.
+- **Linux containers need a Linux kernel.** On Mac/Windows, Docker Desktop runs a lightweight Linux VM to provide that kernel.
+- Isolation is provided by kernel features (**namespaces** and **cgroups**), not by a separate guest OS.
+- This is why containers are **much lighter than virtual machines** and start in milliseconds.
+
+## Docker containers share the host kernel
+
+- Containers run in **user space** and **reuse the host's kernel**; they do not ship their own kernel.
+- **Linux containers need a Linux kernel.** On Mac/Windows, Docker Desktop runs a lightweight Linux VM to provide that kernel.
+- Isolation is provided by kernel features (**namespaces** and **cgroups**), not by a separate guest OS.
+- This is why containers are **much lighter than virtual machines** and start in milliseconds.
+
+## Docker vs Virtual Machines
+
+| Aspect        | Docker container (shares host kernel)    | Virtual machine (VM)                         |
+| ------------- | ---------------------------------------- | -------------------------------------------- |
+| What's inside | App + libraries; **no kernel**           | Full OS with its own kernel                  |
+| Startup speed | Seconds to milliseconds                  | Minutes                                      |
+| Resource use  | Light (no extra OS)                      | Heavy (full OS per VM)                       |
+| Isolation     | Kernel features (namespaces, cgroups)    | Full OS isolation                            |
+| Portability   | Same container runs anywhere with Docker | Needs hypervisor + matching VM image         |
+| Best for      | Microservices, fast scaling, CI/CD       | Legacy apps, strong isolation, full OS needs |
+
+**Container vs Image:**
+
+| Item      | What it is                                                                 | State        | Mutability              | Storage/Location                        | Example                                   |
+| --------- | -------------------------------------------------------------------------- | ------------ | ----------------------- | --------------------------------------- | ----------------------------------------- |
+| Image     | Read-only, layered filesystem + metadata (the recipe)                      | Static build | Immutable               | Stored locally or in a registry         | `myapp:1.0` image in a registry           |
+| Container | Running instance created from an image (uses a thin writable layer on top) | Running      | Writes to its own layer | Lives on a host; can be started/stopped | `docker run myapp:1.0` starts a container |
+
+Note on mutability: container writes stay in its writable layer; the underlying image remains unchanged. To make changes permanent as a new baseline, build/commit a new image.
+
+## Docker in Dev + DevOps
+
+- Devs write code and a **Dockerfile** (a simple build guide with everything the app needs).
+- They **build an image** from that Dockerfile and give that one image to DevOps.
+- DevOps runs the image on any server or cluster; it behaves the same because everything it needs is inside.
+- Result: no “works on my machine” issues — the Dockerfile is the guide, the image is the handoff, the container runs the same everywhere.
