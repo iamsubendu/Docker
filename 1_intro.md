@@ -2,6 +2,19 @@
 
 Docker is a platform that lets you **package an application with everything it needs** (code, runtime, dependencies, configs) into a portable container, so it runs the same way on any machine that has Docker installed.
 
+## Table of Contents
+
+- [What is Docker?](#what-is-docker)
+- [Why do you need Docker?](#why-do-you-need-docker)
+- [What are containers?](#what-are-containers)
+- [How OS works](#how-os-works)
+- [An app on Windows — how will it run on Mac?](#an-app-on-windows--how-will-it-run-on-mac)
+- [Where are containers hosted?](#where-are-containers-hosted-and-how-do-they-manage-so-many-containers)
+- [Docker Architecture](#docker-architecture)
+- [Docker containers share the host kernel](#docker-containers-share-the-host-kernel)
+- [Docker vs Virtual Machines](#docker-vs-virtual-machines)
+- [Docker in Dev + DevOps](#docker-in-dev--devops)
+
 # Why do you need Docker?
 
 Because Docker makes it easy to run your application anywhere without setup issues.
@@ -93,18 +106,15 @@ Since Windows and Mac have **different kernels**, a Windows app can't directly r
 ### Solutions for Cross-Platform Apps:
 
 1. **Cross-platform languages/runtimes**
-
    - **Java** — compiles to bytecode that runs on the Java Virtual Machine (JVM) on any OS
    - **Python, Node.js, etc.** — interpreted languages that work on any OS with the runtime installed
    - **Web apps** — run in browsers, which work on all platforms
 
 2. **Native compilation**
-
    - Build separate versions for each platform (Windows `.exe`, Mac `.app`, Linux binary)
    - Requires maintaining multiple builds and testing on each platform
 
 3. **Virtual machines**
-
    - Run a full OS inside another OS (e.g., Windows VM on Mac)
    - Heavy, slow, and resource-intensive
 
@@ -135,13 +145,11 @@ Yes, these are typically **very large computers and servers** designed to handle
 Managing hundreds or thousands of containers manually would be impossible. That's where **orchestration tools** come in:
 
 1. **Docker Compose** (small to medium scale)
-
    - Manages multiple containers for a single application
    - Defines all services in one file (`docker-compose.yml`)
    - Perfect for: local development, small apps, single-server deployments
 
 2. **Kubernetes** (large scale) ⭐
-
    - **The industry standard** for managing containers at scale
    - Automatically distributes containers across multiple servers
    - Handles:
@@ -167,12 +175,65 @@ A company like Netflix might run **thousands of containers** across **hundreds o
 
 **The bottom line:** Orchestration tools like Kubernetes act as the "traffic controller" for containers, automatically managing where they run, how many run, and keeping everything healthy — so humans don't have to manually manage each container!
 
-## Docker containers share the host kernel
+## Docker Architecture
 
-- Containers run in **user space** and **reuse the host's kernel**; they do not ship their own kernel.
-- **Linux containers need a Linux kernel.** On Mac/Windows, Docker Desktop runs a lightweight Linux VM to provide that kernel.
-- Isolation is provided by kernel features (**namespaces** and **cgroups**), not by a separate guest OS.
-- This is why containers are **much lighter than virtual machines** and start in milliseconds.
+Docker uses a **client-server architecture** with three main components:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                        Docker Host                              │
+│  ┌─────────────────┐    ┌─────────────────────────────────────┐ │
+│  │  Docker Client  │    │         Docker Daemon (dockerd)     │ │
+│  │                 │    │  ┌─────────┐  ┌─────────┐           │ │
+│  │  docker build   │──▶│  │Container│  │Container│           │ │
+│  │  docker pull    │    │  │   1     │  │   2     │           │ │
+│  │  docker run     │    │  └─────────┘  └─────────┘           │ │
+│  │                 │    │  ┌─────────────────────────┐        │ │
+│  └─────────────────┘    │  │   Images / Volumes      │        │ │
+│                         │  └─────────────────────────┘        │ │
+│                         └─────────────────────────────────────┘ │
+└─────────────────────────────────────────────────────────────────┘
+                                    │
+                                    ▼
+                         ┌─────────────────────┐
+                         │   Docker Registry   │
+                         │   (Docker Hub)      │
+                         └─────────────────────┘
+```
+
+### 1. Docker Client
+
+The **Docker Client** (`docker`) is the command-line tool you use to interact with Docker:
+
+- Sends commands to the Docker daemon via REST API
+- Can communicate with local or remote Docker daemons
+- Examples: `docker build`, `docker pull`, `docker run`, `docker ps`
+
+### 2. Docker Daemon
+
+The **Docker Daemon** (`dockerd`) is the background service that does the heavy lifting:
+
+- Manages Docker objects (images, containers, networks, volumes)
+- Listens for Docker API requests from the client
+- Can communicate with other daemons to manage distributed services
+- Handles building, running, and distributing containers
+
+### 3. Docker Registry
+
+A **Docker Registry** stores Docker images:
+
+- **Docker Hub** — the default public registry (like GitHub for images)
+- **Private registries** — AWS ECR, Google Container Registry, self-hosted
+- Commands like `docker pull` and `docker push` interact with registries
+
+### How they work together:
+
+1. You type `docker run nginx` (client)
+2. Client sends the command to the daemon
+3. Daemon checks if `nginx` image exists locally
+4. If not, daemon pulls it from the registry (Docker Hub)
+5. Daemon creates and starts the container
+6. You see the output in your terminal
 
 ## Docker containers share the host kernel
 
