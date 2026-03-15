@@ -2,6 +2,22 @@
 
 Quick reference for technical terms, abbreviations, and flags used in Docker.
 
+## Table of Contents
+
+- [Technical Terms](#technical-terms)
+- [Docker-Specific Terms](#docker-specific-terms)
+- [Common Docker Flags](#common-docker-flags)
+  - [Run Flags](#run-flags)
+  - [List/Query Flags](#listquery-flags)
+  - [Log Flags](#log-flags)
+  - [Build Flags](#build-flags)
+  - [Cleanup Flags](#cleanup-flags)
+- [Common Flag Combinations](#common-flag-combinations)
+- [Exit Codes](#exit-codes)
+- [Port Mapping Examples](#port-mapping-examples)
+- [Volume Mount Examples](#volume-mount-examples)
+- [Environment Variable Examples](#environment-variable-examples)
+
 ---
 
 ## Technical Terms
