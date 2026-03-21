@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Results — Cats vs Dogs</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        max-width: 480px;
+        margin: 2rem auto;
+        padding: 0 1rem;
+      }
+      .bar {
+        background: #eee;
+        border-radius: 4px;
+        margin: 0.5rem 0;
+        padding: 0.5rem;
+      }
+      #err {
+        color: #c00;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vote results</h1>
+    <p>Counts come from PostgreSQL (worker wrote them from Redis).</p>
+    <p id="err"></p>
+    <div class="bar">Cats: <strong id="cats">—</strong></div>
+    <div class="bar">Dogs: <strong id="dogs">—</strong></div>
+    <p><a href="http://localhost:5000">Back to vote</a></p>
+    <script>
+      async function load() {
+        try {
+          const r = await fetch("/api/results");
+          if (!r.ok) throw new Error("Bad response");
+          const j = await r.json();
+          document.getElementById("cats").textContent = j.cats;
+          document.getElementById("dogs").textContent = j.dogs;
+        } catch (e) {
+          document.getElementById("err").textContent =
+            "Could not load (if you just started Docker, wait a few seconds and refresh).";
+        }
+      }
+      load();
+      setInterval(load, 3000);
+    </script>
+  </body>
+</html>

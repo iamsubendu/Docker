@@ -1,0 +1,2 @@
+# Cursor — keep local rules out of the repo (do not push)
+.cursor/rules/
