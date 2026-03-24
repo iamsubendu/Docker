@@ -13,6 +13,27 @@ const pool = new Pool({
   port: 5432,
 });
 
+const VOTES_TABLE_SQL = `
+  CREATE TABLE IF NOT EXISTS votes (
+    id SERIAL PRIMARY KEY,
+    choice VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+async function waitForPostgres(maxAttempts = 60, delayMs = 1000) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await pool.query("SELECT 1");
+      return;
+    } catch {
+      console.log(`Waiting for Postgres (attempt ${attempt}/${maxAttempts})…`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error("Postgres did not become ready in time");
+}
+
 const app = express();
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -34,4 +55,13 @@ app.get("/api/results", async (req, res) => {
   }
 });
 
-app.listen(80, () => console.log("Result app listening on port 80"));
+async function start() {
+  await waitForPostgres();
+  await pool.query(VOTES_TABLE_SQL);
+  app.listen(80, () => console.log("Result app listening on port 80"));
+}
+
+start().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

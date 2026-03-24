@@ -10,7 +10,9 @@ A small multi-service app used to **learn Docker** (Compose, networking, volumes
 - [Architecture (design)](#architecture-design)
 - [How a vote flows](#how-a-vote-flows)
 - [Many `docker run` commands and linking](#many-docker-run-commands-and-linking)
+  - [Full stack with manual commands (no Compose)](#full-stack-with-manual-commands-no-compose)
 - [The same stack with `docker-compose.yml`](#the-same-stack-with-docker-composeyml)
+  - [Common Compose commands: `down`, `down -v`, `up --build`](#common-compose-commands-down-down--v-up-build)
 - [Build from local folders (`build:`)](#build-from-local-folders-build)
 - [Runnable code in this repo](#runnable-code-in-this-repo)
 
@@ -110,6 +112,75 @@ docker run -d --name=worker --link db:db --link redis:redis worker
 
 **Order:** Start **redis** and **db** (and env vars they need) **before** `vote`, `result`, and `worker` so the linked containers already exist.
 
+### Full stack with manual commands (no Compose)
+
+Instead of `--link`, use a **user-defined network**: every container joins the same network, and **container names** become hostnames (`redis`, `db`). That matches what this repo’s apps expect (`REDIS_URL` defaults to `redis://redis:6379`, `DB_HOST` defaults to `db`).
+
+**From the repository root** (the folder that contains `vote/`, `result/`, `worker/`, and `docker-compose.yml`):
+
+**1. Create the network**
+
+```bash
+docker network create vote-net
+```
+
+**2. Start Redis and PostgreSQL first** (names **`redis`** and **`db`** must match the hostnames your code uses)
+
+```bash
+docker run -d --name redis --network vote-net redis:7-alpine
+
+docker run -d --name db --network vote-net \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=example \
+  -e POSTGRES_DB=postgres \
+  -v pgdata:/var/lib/postgresql/data \
+  postgres:15-alpine
+```
+
+On **Windows PowerShell**, run the `db` line as a **single line** (or use `` ` `` for line continuation):
+
+```powershell
+docker run -d --name db --network vote-net -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=example -e POSTGRES_DB=postgres -v pgdata:/var/lib/postgresql/data postgres:15-alpine
+```
+
+**3. Build the three app images**
+
+```bash
+cd vote
+docker build -t voting-app .
+cd ../result
+docker build -t result-app .
+cd ../worker
+docker build -t worker .
+cd ..
+```
+
+**4. Run vote, result, and worker** on **`vote-net`** with the same env vars as [this repo’s `docker-compose.yml`](docker-compose.yml)
+
+```bash
+docker run -d --name vote -p 5000:80 --network vote-net -e REDIS_URL=redis://redis:6379 voting-app
+
+docker run -d --name result -p 5001:80 --network vote-net -e DB_HOST=db -e POSTGRES_PASSWORD=example result-app
+
+docker run -d --name worker --network vote-net -e REDIS_URL=redis://redis:6379 -e DB_HOST=db -e POSTGRES_PASSWORD=example worker
+```
+
+| URL / note | |
+| --- | --- |
+| Voting UI | `http://localhost:5000` |
+| Result UI | `http://localhost:5001` |
+| **Worker** | No `-p` — it only talks to Redis and Postgres on the network. |
+
+**Order:** Datastores first, then apps. If **worker** starts before Postgres accepts connections, restart it: `docker start worker` (Compose’s `depends_on` has the same limitation — it does not wait for the DB to be “ready”).
+
+**Cleanup (removes containers; add `-v` to remove the named volume if you want a fresh DB):**
+
+```bash
+docker rm -f vote result worker redis db
+docker volume rm pgdata
+docker network rm vote-net
+```
+
 ---
 
 ## The same stack with `docker-compose.yml`
@@ -165,6 +236,29 @@ docker compose up -d
 ```bash
 docker compose down
 ```
+
+### Common Compose commands: `down`, `down -v`, `up --build`
+
+| Command | What it does |
+| --- | --- |
+| **`docker compose down`** | Stops and removes **containers** and the **Compose project network**. **Named volumes** (e.g. `pgdata` for PostgreSQL in this repo) are **kept** — your database files survive so votes persist across restarts. |
+| **`docker compose down -v`** | Same as `down`, plus **removes named volumes** from the compose file. Use for a **clean slate** (empty DB, all data in those volumes deleted) or when you want Postgres to run **init** again on next `up`. |
+| **`docker compose up --build`** | **Builds** images (for services with `build:`) then **starts** containers. Use after you change **Dockerfile** or **app code** so running containers use the new image. Often combined with `-d` for detached mode: `docker compose up -d --build`. |
+
+**Typical sequences:**
+
+```bash
+# Stop stack but keep Postgres data
+docker compose down
+
+# Stop stack and delete named volumes (fresh database next time)
+docker compose down -v
+
+# Rebuild app images and start everything (foreground — logs in terminal)
+docker compose up --build
+```
+
+Run these from the folder that contains **`docker-compose.yml`**. More Compose commands: [8_compose.md — Common commands](8_compose.md#common-commands).
 
 | Idea                          | Meaning                                                                                                                            |
 | ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |

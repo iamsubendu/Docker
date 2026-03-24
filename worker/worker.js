@@ -15,18 +15,34 @@ const pool = new Pool({
 
 const redis = new Redis(redisUrl);
 
+const VOTES_TABLE_SQL = `
+  CREATE TABLE IF NOT EXISTS votes (
+    id SERIAL PRIMARY KEY,
+    choice VARCHAR(10) NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+`;
+
+async function waitForPostgres(maxAttempts = 60, delayMs = 1000) {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      await pool.query("SELECT 1");
+      return;
+    } catch {
+      console.log(`Waiting for Postgres (attempt ${attempt}/${maxAttempts})…`);
+      await new Promise((r) => setTimeout(r, delayMs));
+    }
+  }
+  throw new Error("Postgres did not become ready in time");
+}
+
 async function initDb() {
-  await pool.query(`
-    CREATE TABLE IF NOT EXISTS votes (
-      id SERIAL PRIMARY KEY,
-      choice VARCHAR(10) NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    );
-  `);
+  await pool.query(VOTES_TABLE_SQL);
   console.log("DB ready (table votes)");
 }
 
 async function run() {
+  await waitForPostgres();
   await initDb();
   console.log("Worker waiting for votes from Redis (list: votes)…");
 

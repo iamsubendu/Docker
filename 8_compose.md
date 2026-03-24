@@ -5,6 +5,7 @@ Run multiple containers together with one file and one command.
 ## Table of Contents
 
 - [What is Docker Compose?](#what-is-docker-compose)
+- [Installing Docker Compose](#installing-docker-compose)
 - [Docker Compose versions (CLI and compose file)](#docker-compose-versions-cli-and-compose-file)
   - [With `docker compose`: you don’t need `--link` or `links:`](#with-docker-compose-you-dont-need--link-or-links)
 - [docker-compose.yml](#docker-composeyml)
@@ -12,6 +13,7 @@ Run multiple containers together with one file and one command.
 - [Example](#example)
 - [Networking in Compose](#networking-in-compose)
   - [Links not required with Compose V2](#links-not-required-with-compose-v2)
+  - [Separate networks for frontend and backend](#separate-networks-for-frontend-and-backend)
 - [Volumes in Compose](#volumes-in-compose)
 
 ---
@@ -27,6 +29,42 @@ Run multiple containers together with one file and one command.
 
 - Compose file name is usually **`docker-compose.yml`** or **`compose.yml`**.
 - Prefer **`docker compose`** (see [below](#docker-compose-versions-cli-and-compose-file)).
+
+---
+
+## Installing Docker Compose
+
+**Compose V2** is the **`docker compose`** command (two words). You get it in one of these ways:
+
+| How you use Docker | What to install |
+| --- | --- |
+| **Docker Desktop** (Windows or Mac) | **Nothing extra** — Docker Desktop includes the Compose plugin. Install or update [Docker Desktop](https://www.docker.com/products/docker-desktop/), start it, then check [below](#verify-compose). |
+| **Docker Engine on Linux** (no Desktop) | Install the **`docker-compose-plugin`** package alongside Docker. It provides **`docker compose`** as part of the Docker CLI. |
+
+**Linux (apt, Ubuntu/Debian)** — if you already followed [2_installation.md — On Ubuntu](2_installation.md#on-ubuntu), you likely have this line, which installs Compose with the engine:
+
+```bash
+sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+```
+
+If Docker is already installed but Compose is missing, install only the plugin:
+
+```bash
+sudo apt-get update
+sudo apt-get install -y docker-compose-plugin
+```
+
+Other distributions: see [Install the Docker Compose plugin](https://docs.docker.com/compose/install/linux/) in Docker’s docs (RPM, static binaries, etc.).
+
+### Verify Compose
+
+```bash
+docker compose version
+```
+
+You should see something like `Docker Compose version v2.x.x`. If the command is not found, ensure Docker itself works (`docker --version`) and that the **Compose plugin** is installed (Desktop or `docker-compose-plugin` on Linux).
+
+**Note:** The old standalone **`docker-compose`** binary (hyphen, often v1) is **deprecated**. Prefer **`docker compose`**. See [Docker Compose versions (CLI and compose file)](#docker-compose-versions-cli-and-compose-file).
 
 ---
 
@@ -224,6 +262,70 @@ docker compose down
 **You still use** **`depends_on:`** if you only want **start order** (api before web). That is **not** a substitute for networking; DNS works without `depends_on`.
 
 For the old `docker run` + `--link` story vs Compose, see [9_voting_app.md](9_voting_app.md#many-docker-run-commands-and-linking).
+
+### Separate networks for frontend and backend
+
+Sometimes you want **more than one network**: e.g. a **public-facing** tier (reverse proxy, static site) and an **internal** tier (API, database). Containers on different networks **cannot** talk to each other unless they share a network or you expose a port to the host (not ideal for service-to-service traffic).
+
+**Typical layout:**
+
+| Goal | What you do |
+| --- | --- |
+| Isolate the database | Put **`db`** (and often **`api`**) only on an **internal** network. |
+| Let users reach only the edge | Publish ports on **`web`** (e.g. Nginx), not on **`api`** or **`db`**. |
+| Let Nginx proxy to the API | Attach **`web`** to **both** the public-facing network **and** the internal network so it can resolve **`http://api:3000`** (or similar). |
+
+Declare networks under a top-level **`networks:`** block, then list which networks each **`service`** uses. Optional: mark a backend network as **`internal: true`** so it has **no default route to the internet** (containers on that network cannot reach the outside world through Docker’s bridge—useful for tightening internal tiers).
+
+**Example — `web` on two networks, `api` and `db` only on the internal network:**
+
+```yaml
+services:
+  web:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    networks:
+      - frontend_net
+      - backend_net
+    depends_on:
+      - api
+
+  api:
+    image: node:18-alpine
+    working_dir: /app
+    command: node server.js
+    networks:
+      - backend_net
+    # No host ports: only `web` (and other services on backend_net) can reach this by hostname `api`.
+
+  db:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: example
+    networks:
+      - backend_net
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+
+networks:
+  frontend_net:
+    name: myapp_frontend
+  backend_net:
+    name: myapp_backend
+    internal: true
+
+volumes:
+  pgdata:
+```
+
+**How to read it:**
+
+- **`frontend_net`** — where **`web`** faces the host (`ports:`). You can add other public services here later.
+- **`backend_net`** — **`api`**, **`db`**, and **`web`** share it so Nginx can upstream to **`api`** by service name. **`internal: true`** keeps that network from routing outward (adjust if your API must call external APIs—then use a non-internal network or a sidecar pattern).
+- **`web`** lists **two** networks so it is reachable from outside **and** can talk to **`api`** on **`backend_net`**.
+
+**If the frontend is only static files** served by the same **`web`** container that proxies to **`api`**, you don’t need a separate “frontend-only” service on **`frontend_net`** alone—the split is still useful so **`db`** never joins the same network as arbitrary future containers you might add to **`frontend_net`**.
 
 ---
 
