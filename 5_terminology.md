@@ -54,6 +54,16 @@ Quick reference for technical terms, abbreviations, and flags used in Docker.
 
 ## Docker-Specific Terms
 
+**Image vs container (relationship):**
+
+```
+  ┌──────────────────┐        ┌──────────────────────────┐
+  │      Image       │        │        Container         │
+  │ (read-only       │──────▶ │ (writable layer on top   │
+  │  layers)         │        │  of image layers)        │
+  └──────────────────┘        └──────────────────────────┘
+```
+
 | Term | Meaning |
 |------|---------|
 | **Image** | Read-only template with instructions to create a container |

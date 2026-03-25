@@ -30,6 +30,17 @@ Run multiple containers together with one file and one command.
 - Compose file name is usually **`docker-compose.yml`** or **`compose.yml`**.
 - Prefer **`docker compose`** (see [below](#docker-compose-versions-cli-and-compose-file)).
 
+**Design:** Compose is a **client** of the same **Docker Engine API** — it reads the YAML file and sends API calls to create networks, volumes, and containers.
+
+```
+  compose.yml ──▶ docker compose ── Engine API ──▶ Docker daemon ──▶ Services
+                                                                    (containers,
+                                                                     networks,
+                                                                     volumes)
+```
+
+Engine background: [11_engine.md](11_engine.md).
+
 ---
 
 ## Installing Docker Compose

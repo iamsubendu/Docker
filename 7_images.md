@@ -25,6 +25,20 @@ You are containerizing **whatever your application needs to run**:
 
 **Layers:** Every instruction in the Dockerfile creates a **layer** when you build. The image is a stack of read-only layers; each instruction adds one. Docker caches each layer. If an instruction and everything before it are unchanged, Docker reuses the cached layer instead of rebuilding it. **Caching layers helps you rebuild faster each time** — only changed layers (and the ones after them) are rebuilt.
 
+**Layer stack (conceptual):**
+
+```
+  ┌──────────────────────────┐
+  │  Layer N: CMD / entry    │  ← topmost
+  ├──────────────────────────┤
+  │  Layer 3: COPY app       │
+  ├──────────────────────────┤
+  │  Layer 2: RUN install    │
+  ├──────────────────────────┤
+  │  Layer 1: FROM base      │  ← bottom (base image)
+  └──────────────────────────┘
+```
+
 **Example — order and caching:**
 
 ```dockerfile

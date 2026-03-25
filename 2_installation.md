@@ -35,6 +35,13 @@ sudo apt-get update
 sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
 ```
 
+**What you get (conceptual):** **`docker-ce`** is the **daemon** (Engine); **`docker-ce-cli`** is the **`docker`** client; **`containerd.io`** (and **`runc`**) are lower-level runtime pieces the daemon uses. The **REST API** is provided **by the daemon**, not a separate package — see [11_engine.md — Three components](11_engine.md#three-components-on-a-linux-install).
+
+```
+  docker-ce-cli ──── HTTP / socket ────▶ REST API ────▶ docker-ce
+  (Docker CLI)                          (inside dockerd)  (daemon)
+```
+
 ### On Mac
 
 1. Download **Docker Desktop for Mac** from [docker.com](https://www.docker.com/products/docker-desktop/)

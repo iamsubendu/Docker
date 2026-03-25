@@ -2,6 +2,7 @@
 
 ## Table of Contents
 
+- [How commands reach Docker Engine](#how-commands-reach-docker-engine)
 - [Image Commands](#image-commands)
 - [Container Lifecycle](#container-lifecycle)
 - [Running Containers](#running-containers)
@@ -12,6 +13,19 @@
 - [Docker Compose](#docker-compose)
 - [Cleanup Commands](#cleanup-commands)
 - [Building Images](#building-images)
+
+---
+
+## How commands reach Docker Engine
+
+Every `docker …` command uses the **CLI** to call the Engine **REST API** on the **daemon** (unless you use context / remote `-H`). The daemon performs the work.
+
+```
+  You type                                Docker Engine
+  docker run / ps / ...  ──▶  Docker CLI  ── Engine API ──▶  daemon
+```
+
+Details: [11_engine.md](11_engine.md).
 
 ---
 

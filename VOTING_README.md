@@ -10,6 +10,12 @@ Separate folders at the **repo root** — one directory per service:
 
 **`docker-compose.yml`** is also at the **repo root** (same level as those folders). It starts Redis, Postgres, and builds the three apps.
 
+```
+  docker compose ── API calls ──▶ Docker Engine ──▶ redis, db, vote, result, worker
+```
+
+**Engine (CLI, API, daemon):** [11_engine.md](11_engine.md) · **Voting architecture:** [9_voting_app.md](9_voting_app.md)
+
 ## Run
 
 From the **`Docker/`** repo root:

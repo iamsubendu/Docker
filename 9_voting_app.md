@@ -70,6 +70,34 @@ Vote travels **down** the stack; the result screen reads from the bottom.
 
 **One line:** Voting UI → Redis → Worker → PostgreSQL → Result UI
 
+**Same flow as a diagram:**
+
+```
+  ┌────────────────┐
+  │   Voting UI    │
+  └───────┬────────┘
+          │ POST vote
+          ▼
+  ┌────────────────┐
+  │     Redis      │
+  └───────┬────────┘
+          │ brpop
+          ▼
+  ┌────────────────┐
+  │    Worker      │
+  └───────┬────────┘
+          │ INSERT
+          ▼
+  ┌────────────────┐
+  │  PostgreSQL    │
+  └───────┬────────┘
+          │ SELECT counts
+          ▼
+  ┌────────────────┐
+  │   Result UI    │
+  └────────────────┘
+```
+
 ---
 
 ## How a vote flows

@@ -11,6 +11,7 @@ Docker is a platform that lets you **package an application with everything it n
 - [An app on Windows — how will it run on Mac?](#an-app-on-windows--how-will-it-run-on-mac)
 - [Where are containers hosted?](#where-are-containers-hosted-and-how-do-they-manage-so-many-containers)
 - [Docker Architecture](#docker-architecture)
+- [Docker Engine (CLI, API, daemon) — deeper dive](11_engine.md)
 - [Docker containers share the host kernel](#docker-containers-share-the-host-kernel)
 - [Docker vs Virtual Machines](#docker-vs-virtual-machines)
 - [Docker in Dev + DevOps](#docker-in-dev--devops)
@@ -201,12 +202,21 @@ Docker uses a **client-server architecture** with three main components:
                          └─────────────────────┘
 ```
 
+**Same architecture as a flow (CLI → REST API → daemon):**
+
+```
+  Docker CLI ──── HTTP ────▶ REST API ────▶ Docker daemon
+   (docker)                 (Engine API)     (dockerd)
+```
+
+For **remote** daemons, the CLI can target another host, e.g. `docker -H tcp://host:2375 ps` — see [11_engine.md — Remote Engine](11_engine.md#remote-engine-cli-on-another-machine).
+
 ### 1. Docker Client
 
 The **Docker Client** (`docker`) is the command-line tool you use to interact with Docker:
 
-- Sends commands to the Docker daemon via REST API
-- Can communicate with local or remote Docker daemons
+- Sends commands to the Docker daemon **via the REST API** (Engine HTTP API)
+- Can communicate with local or remote Docker daemons (`-H` / `DOCKER_HOST`)
 - Examples: `docker build`, `docker pull`, `docker run`, `docker ps`
 
 ### 2. Docker Daemon
@@ -214,7 +224,7 @@ The **Docker Client** (`docker`) is the command-line tool you use to interact wi
 The **Docker Daemon** (`dockerd`) is the background service that does the heavy lifting:
 
 - Manages Docker objects (images, containers, networks, volumes)
-- Listens for Docker API requests from the client
+- **Exposes** the Docker Engine **REST API** and listens for requests from the client (and other tools)
 - Can communicate with other daemons to manage distributed services
 - Handles building, running, and distributing containers
 
@@ -239,7 +249,7 @@ A **Docker Registry** stores Docker images:
 
 - Containers run in **user space** and **reuse the host's kernel**; they do not ship their own kernel.
 - **Linux containers need a Linux kernel.** On Mac/Windows, Docker Desktop runs a lightweight Linux VM to provide that kernel.
-- Isolation is provided by kernel features (**namespaces** and **cgroups**), not by a separate guest OS.
+- Isolation is provided by kernel features (**namespaces** and **cgroups**), not by a separate guest OS. Docker creates a **separate set of namespaces** (PID, NET, MNT, UTS, IPC) for each container — see [11_engine.md — Container isolation: Linux namespaces](11_engine.md#container-isolation-linux-namespaces).
 - This is why containers are **much lighter than virtual machines** and start in milliseconds.
 
 ## Docker vs Virtual Machines
