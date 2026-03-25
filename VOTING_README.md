@@ -25,6 +25,14 @@ docker compose up -d --build
 docker compose down
 ```
 
+## PostgreSQL username and password
+
+The **`db`** service in **`docker-compose.yml`** sets **`POSTGRES_USER`**, **`POSTGRES_PASSWORD`**, and **`POSTGRES_DB`**. The official PostgreSQL image **requires** a password for a normal first-time setup; the superuser name and database name should be explicit.
+
+**`result`** and **`worker`** use **`POSTGRES_PASSWORD`** (and **`DB_HOST`**) — the password **must match** what you set on **`db`**. This repo uses database user **`postgres`** and database name **`postgres`** in code; if you change **`POSTGRES_USER`** or **`POSTGRES_DB`**, update the apps accordingly.
+
+See [9_voting_app.md — PostgreSQL username and password](9_voting_app.md#postgresql-username-and-password).
+
 ## PostgreSQL volumes (why two `volumes` blocks?)
 
 **Under `db:`**

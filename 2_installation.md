@@ -2,10 +2,10 @@
 
 ## Prerequisites
 
-| Platform | Requirements |
-|----------|-------------|
-| **Ubuntu** | 64-bit version of Ubuntu 20.04+, sudo access |
-| **Mac** | macOS 12+ (Monterey or newer), Apple Silicon or Intel chip |
+| Platform    | Requirements                                                       |
+| ----------- | ------------------------------------------------------------------ |
+| **Ubuntu**  | 64-bit version of Ubuntu 20.04+, sudo access                       |
+| **Mac**     | macOS 12+ (Monterey or newer), Apple Silicon or Intel chip         |
 | **Windows** | Windows 10/11 64-bit (Pro, Enterprise, or Education), WSL2 enabled |
 
 ---
@@ -108,13 +108,13 @@ docker info
 
 ### Common Issues
 
-| Problem | Solution |
-|---------|----------|
-| `permission denied` when running docker | Run `sudo usermod -aG docker $USER` and log out/in |
-| `Cannot connect to the Docker daemon` | Ensure Docker Desktop is running, or start with `sudo systemctl start docker` |
-| WSL2 errors on Windows | Run `wsl --update` in PowerShell as admin |
-| Slow performance on Mac/Windows | Allocate more RAM/CPU in Docker Desktop Settings > Resources |
-| `no space left on device` | Run `docker system prune -a` to clean unused data |
+| Problem                                 | Solution                                                                      |
+| --------------------------------------- | ----------------------------------------------------------------------------- |
+| `permission denied` when running docker | Run `sudo usermod -aG docker $USER` and log out/in                            |
+| `Cannot connect to the Docker daemon`   | Ensure Docker Desktop is running, or start with `sudo systemctl start docker` |
+| WSL2 errors on Windows                  | Run `wsl --update` in PowerShell as admin                                     |
+| Slow performance on Mac/Windows         | Allocate more RAM/CPU in Docker Desktop Settings > Resources                  |
+| `no space left on device`               | Run `docker system prune -a` to clean unused data                             |
 
 ### Check Docker daemon status (Linux)
 
@@ -146,10 +146,11 @@ journalctl -u docker.service
 Find official and community Docker images at: **https://hub.docker.com**
 
 Popular images:
+
 - `nginx` — Web server
 - `node` — Node.js runtime
 - `python` — Python runtime
-- `postgres` — PostgreSQL database
+- `postgres` — PostgreSQL database (set **`POSTGRES_USER`** / **`POSTGRES_PASSWORD`** / **`POSTGRES_DB`** when you run it)
 - `redis` — In-memory data store
 - `mysql` — MySQL database
 - `mongo` — MongoDB database

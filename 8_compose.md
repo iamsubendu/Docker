@@ -302,7 +302,9 @@ services:
   db:
     image: postgres:15
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
+      POSTGRES_DB: postgres
     networks:
       - backend_net
     volumes:
@@ -326,6 +328,8 @@ volumes:
 - **`web`** lists **two** networks so it is reachable from outside **and** can talk to **`api`** on **`backend_net`**.
 
 **If the frontend is only static files** served by the same **`web`** container that proxies to **`api`**, you don’t need a separate “frontend-only” service on **`frontend_net`** alone—the split is still useful so **`db`** never joins the same network as arbitrary future containers you might add to **`frontend_net`**.
+
+**PostgreSQL:** The official image expects **`POSTGRES_PASSWORD`** (required when the data directory is first initialized). Set **`POSTGRES_USER`** and **`POSTGRES_DB`** too. Application services must use the **same** username/password (via their own **`environment`** or config).
 
 ---
 
@@ -352,12 +356,18 @@ Compose uses two common patterns: **bind mounts** (a folder you choose) and **na
 services:
   db:
     image: postgres:15
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_DB: postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
 
 volumes:
   pgdata:
 ```
+
+**PostgreSQL username and password:** With the official **`postgres`** image you **must** supply **`POSTGRES_PASSWORD`** when the data directory is first created; also set **`POSTGRES_USER`** and **`POSTGRES_DB`** so the superuser name and default database are explicit. Application services that talk to Postgres need the **same** password (and usually the same user/database) via their own env vars.
 
 Read **`pgdata:/var/lib/postgresql/data`** as **`host_side` `:` `path_inside_container`**:
 
@@ -382,5 +392,6 @@ Read **`pgdata:/var/lib/postgresql/data`** as **`host_side` `:` `path_inside_con
 
 - **Bind mounts** — `./folder:/path` maps a folder **you** choose (good for development).
 - **Named volumes** — `name:/path` maps Docker-managed storage by **name** (good for DB persistence).
+- **PostgreSQL in Compose** — set **`POSTGRES_PASSWORD`** (required on first init), plus **`POSTGRES_USER`** and **`POSTGRES_DB`**; app services need the **same** credentials (see the **`db:`** example under **Named volume: two `volumes` blocks** above).
 
 For more commands, see [3_basicCommands.md](3_basicCommands.md#docker-compose). For a hands-on demo, see [4_demo.md](4_demo.md) (Demo 9). A full stack with Postgres named volumes is in [VOTING_README.md](VOTING_README.md).

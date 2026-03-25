@@ -9,6 +9,7 @@ A small multi-service app used to **learn Docker** (Compose, networking, volumes
 - [What we are building](#what-we-are-building)
 - [Architecture (design)](#architecture-design)
 - [How a vote flows](#how-a-vote-flows)
+- [PostgreSQL username and password](#postgresql-username-and-password)
 - [Many `docker run` commands and linking](#many-docker-run-commands-and-linking)
   - [Full stack with manual commands (no Compose)](#full-stack-with-manual-commands-no-compose)
 - [The same stack with `docker-compose.yml`](#the-same-stack-with-docker-composeyml)
@@ -81,16 +82,34 @@ Vote travels **down** the stack; the result screen reads from the bottom.
 
 ---
 
+## PostgreSQL username and password
+
+The official **`postgres`** image **requires** you to define credentials when the data directory is first created — at minimum **`POSTGRES_PASSWORD`**. You should also set **`POSTGRES_USER`** (superuser name) and **`POSTGRES_DB`** (initial database name) so behavior is explicit.
+
+| Variable | Role |
+| --- | --- |
+| **`POSTGRES_PASSWORD`** | **Required** for a normal setup — the superuser’s password. Without it, the container may refuse to initialize as you expect. |
+| **`POSTGRES_USER`** | Database superuser name (this repo uses **`postgres`**, which matches **`result/`** and **`worker/`** code). |
+| **`POSTGRES_DB`** | Name of the default database (this repo uses **`postgres`**). |
+
+**Apps must match the database:** **`result`** and **`worker`** read **`POSTGRES_PASSWORD`** from the environment and connect as user **`postgres`** to database **`postgres`**. Whatever password you set on the **`db`** container, pass the **same** value in **`POSTGRES_PASSWORD`** for **`result`** and **`worker`** (see [this repo’s `docker-compose.yml`](docker-compose.yml)).
+
+---
+
 ## Many `docker run` commands and linking
 
 Assume your images already exist (`redis`, `postgres`, `voting-app`, `result-app`, `worker`). You might start everything like this:
 
 ```bash
 docker run -d --name=redis redis
-docker run -d --name=db postgres
+docker run -d --name=db \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_PASSWORD=example \
+  -e POSTGRES_DB=postgres \
+  postgres
 docker run -d --name=vote -p 5000:80 voting-app
-docker run -d --name=result -p 5001:80 result-app
-docker run -d --name=worker worker
+docker run -d --name=result -p 5001:80 -e DB_HOST=db -e POSTGRES_PASSWORD=example result-app
+docker run -d --name=worker -e DB_HOST=db -e POSTGRES_PASSWORD=example worker
 ```
 
 **Problem:** Containers are isolated. By default, `vote` does not know how to reach `redis`, `result` does not know `db`, and `worker` does not know `redis` or `db`. Your app code often uses **hostnames** like `redis` or `db` — those names must resolve inside each container. If you only run the commands above, you will get **connection errors** because nothing is linked yet.
@@ -99,8 +118,8 @@ docker run -d --name=worker worker
 
 ```bash
 docker run -d --name=vote -p 5000:80 --link redis:redis voting-app
-docker run -d --name=result -p 5001:80 --link db:db result-app
-docker run -d --name=worker --link db:db --link redis:redis worker
+docker run -d --name=result -p 5001:80 --link db:db -e POSTGRES_PASSWORD=example result-app
+docker run -d --name=worker --link db:db --link redis:redis -e POSTGRES_PASSWORD=example worker
 ```
 
 | Part                 | Meaning                                                                                |
@@ -124,7 +143,7 @@ Instead of `--link`, use a **user-defined network**: every container joins the s
 docker network create vote-net
 ```
 
-**2. Start Redis and PostgreSQL first** (names **`redis`** and **`db`** must match the hostnames your code uses)
+**2. Start Redis and PostgreSQL first** (names **`redis`** and **`db`** must match the hostnames your code uses). For Postgres, set **`POSTGRES_USER`**, **`POSTGRES_PASSWORD`**, and **`POSTGRES_DB`** — see [PostgreSQL username and password](#postgresql-username-and-password).
 
 ```bash
 docker run -d --name redis --network vote-net redis:7-alpine
@@ -155,7 +174,7 @@ docker build -t worker .
 cd ..
 ```
 
-**4. Run vote, result, and worker** on **`vote-net`** with the same env vars as [this repo’s `docker-compose.yml`](docker-compose.yml)
+**4. Run vote, result, and worker** on **`vote-net`** with the same env vars as [this repo’s `docker-compose.yml`](docker-compose.yml). **`POSTGRES_PASSWORD`** must match the value you used for **`db`** in step 2 ([PostgreSQL username and password](#postgresql-username-and-password)).
 
 ```bash
 docker run -d --name vote -p 5000:80 --network vote-net -e REDIS_URL=redis://redis:6379 voting-app
@@ -197,7 +216,9 @@ services:
   db:
     image: postgres
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
+      POSTGRES_DB: postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -205,6 +226,8 @@ services:
     image: voting-app
     ports:
       - "5000:80"
+    environment:
+      REDIS_URL: redis://redis:6379
     depends_on:
       - redis
 
@@ -212,11 +235,18 @@ services:
     image: result-app
     ports:
       - "5001:80"
+    environment:
+      DB_HOST: db
+      POSTGRES_PASSWORD: example
     depends_on:
       - db
 
   worker:
     image: worker
+    environment:
+      REDIS_URL: redis://redis:6379
+      DB_HOST: db
+      POSTGRES_PASSWORD: example
     depends_on:
       - redis
       - db
@@ -265,7 +295,7 @@ Run these from the folder that contains **`docker-compose.yml`**. More Compose c
 | **Service names**             | `redis`, `db`, `vote`, `result`, `worker` are hostnames inside the network — your app can use `redis` and `db` like with `--link`. |
 | **`depends_on`**              | Starts `redis` / `db` before apps that need them (order only; does not wait until DB is “ready”).                                  |
 | **`ports`**                   | Same as `-p 5000:80` on `docker run`.                                                                                              |
-| **`environment` / `volumes`** | Postgres needs a password; `pgdata` keeps DB files after `compose down` (without `-v`).                                            |
+| **`environment` / `volumes`** | Postgres needs **`POSTGRES_USER`**, **`POSTGRES_PASSWORD`**, and usually **`POSTGRES_DB`**; **`result`** and **`worker`** need the **same** **`POSTGRES_PASSWORD`** (and **`DB_HOST`**) as in [PostgreSQL username and password](#postgresql-username-and-password). `pgdata` keeps DB files after `compose down` (without `-v`). |
 
 More Compose basics: [8_compose.md](8_compose.md).
 
@@ -283,7 +313,9 @@ services:
   db:
     image: postgres
     environment:
+      POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
+      POSTGRES_DB: postgres
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -291,6 +323,8 @@ services:
     build: ./vote
     ports:
       - "5000:80"
+    environment:
+      REDIS_URL: redis://redis:6379
     depends_on:
       - redis
 
@@ -298,11 +332,18 @@ services:
     build: ./result
     ports:
       - "5001:80"
+    environment:
+      DB_HOST: db
+      POSTGRES_PASSWORD: example
     depends_on:
       - db
 
   worker:
     build: ./worker
+    environment:
+      REDIS_URL: redis://redis:6379
+      DB_HOST: db
+      POSTGRES_PASSWORD: example
     depends_on:
       - redis
       - db
