@@ -35,68 +35,46 @@ A small multi-service app used to **learn Docker** (Compose, networking, volumes
 
 ### Diagram (plain text)
 
-Vote travels **down** the stack; the result screen reads from the bottom.
+Vote travels **down** the stack; the result screen reads from the bottom. The voting UI is where the user chooses **Cats** or **Dogs** and sends a vote; **Redis** holds new votes in memory; the **worker** (Node.js) reads Redis and writes to **PostgreSQL**; the **result UI** reads counts and shows totals.
 
 ```
-┌────────────────┐
-│   Voting UI    │     user chooses Cats or Dogs
-│  (JS / React)  │
-└───────┬────────┘
-        │  send vote
-        ▼
-┌────────────────┐
-│     Redis      │     keeps new votes in memory (fast)
-│  (in-memory)   │
-└───────┬────────┘
-        │  worker picks up
-        ▼
-┌────────────────┐
-│    Worker      │     Node.js: read Redis, write to DB
-│   (Node.js)    │
-└───────┬────────┘
-        │  save vote
-        ▼
-┌────────────────┐
-│  PostgreSQL    │     real database (data stays after restart)
-│   (real DB)    │
-└───────┬────────┘
-        │  read counts
-        ▼
-┌────────────────┐
-│   Result UI    │     shows Cats vs Dogs totals
-│  (JS / React)  │
-└────────────────┘
++------------------+
+|    Voting UI     |
+|  (JS / React)    |
++--------+---------+
+         |
+    send vote
+         v
++------------------+
+|      Redis       |
+|   (in-memory)    |
++--------+---------+
+         |
+  worker picks up
+         v
++------------------+
+|     Worker       |
+|    (Node.js)     |
++--------+---------+
+         |
+    save vote
+         v
++------------------+
+|   PostgreSQL     |
+|    (real DB)     |
++--------+---------+
+         |
+   read counts
+         v
++------------------+
+|    Result UI     |
+|  (JS / React)    |
++------------------+
 ```
 
-**One line:** Voting UI → Redis → Worker → PostgreSQL → Result UI
+**One line:** Voting UI -> Redis -> Worker -> PostgreSQL -> Result UI
 
-**Same flow as a diagram:**
-
-```
-  ┌────────────────┐
-  │   Voting UI    │
-  └───────┬────────┘
-          │ POST vote
-          ▼
-  ┌────────────────┐
-  │     Redis      │
-  └───────┬────────┘
-          │ brpop
-          ▼
-  ┌────────────────┐
-  │    Worker      │
-  └───────┬────────┘
-          │ INSERT
-          ▼
-  ┌────────────────┐
-  │  PostgreSQL    │
-  └───────┬────────┘
-          │ SELECT counts
-          ▼
-  ┌────────────────┐
-  │   Result UI    │
-  └────────────────┘
-```
+**Same flow (API / DB view):** browser **POST**s a vote to the voting service -> vote lands in **Redis** -> worker **BRPOP** (or similar) -> **INSERT** into Postgres -> result app **SELECT**s counts for the results page.
 
 ---
 

@@ -28,15 +28,15 @@ You are containerizing **whatever your application needs to run**:
 **Layer stack (conceptual):**
 
 ```
-  ┌──────────────────────────┐
-  │  Layer N: CMD / entry    │  ← topmost
-  ├──────────────────────────┤
-  │  Layer 3: COPY app       │
-  ├──────────────────────────┤
-  │  Layer 2: RUN install    │
-  ├──────────────────────────┤
-  │  Layer 1: FROM base      │  ← bottom (base image)
-  └──────────────────────────┘
+  +--------------------------+
+  | Layer N: CMD / entry     |  <- topmost
+  +--------------------------+
+  | Layer 3: COPY app        |
+  +--------------------------+
+  | Layer 2: RUN install     |
+  +--------------------------+
+  | Layer 1: FROM base       |  <- bottom (base image)
+  +--------------------------+
 ```
 
 **Example — order and caching:**

@@ -57,11 +57,11 @@ Quick reference for technical terms, abbreviations, and flags used in Docker.
 **Image vs container (relationship):**
 
 ```
-  ┌──────────────────┐        ┌──────────────────────────┐
-  │      Image       │        │        Container         │
-  │ (read-only       │──────▶ │ (writable layer on top   │
-  │  layers)         │        │  of image layers)        │
-  └──────────────────┘        └──────────────────────────┘
+  +------------------------------+          +------------------------------+
+  | Image                        |          | Container                    |
+  | (read-only layers)           |--------->| (writable layer on top of    |
+  |                              |          |  image layers)               |
+  +------------------------------+          +------------------------------+
 ```
 
 | Term | Meaning |

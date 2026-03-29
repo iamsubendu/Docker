@@ -51,21 +51,30 @@ Flow: **CLI → REST API → daemon → containers / images / networks / volumes
 Default on Linux: the CLI talks to the daemon over a **Unix socket** (still the same Engine API).
 
 ```
-┌─────────────────┐         ┌──────────────────────────────────────────┐
-│   Your machine  │         │        Docker Engine (on host)           │
-│                 │         │                                          │
-│  ┌───────────┐  │  HTTP   │  ┌──────────┐   ┌─────────┐             │
-│  │ Docker CLI│──┼────────▶│  │ REST API │──▶│ dockerd │             │
-│  │ (docker)  │  │  Unix   │  │(Engine   │   │ (daemon)│             │
-│  └───────────┘  │  socket │  │  HTTP API)│   └────┬────┘             │
-│                 │         │  └──────────┘        │                   │
-│                 │         │              ┌───────▼────────┐          │
-│                 │         │              │ Images,        │          │
-│                 │         │              │ containers,    │          │
-│                 │         │              │ networks,      │          │
-│                 │         │              │ volumes        │          │
-│                 │         │              └────────────────┘          │
-└─────────────────┘         └──────────────────────────────────────────┘
++----------------------------------------------------------------------+
+|                    Your machine                                      |
+|                                                                      |
+|  +----------------------+                                            |
+|  |    Docker CLI        |                                            |
+|  |     (docker)         |                                            |
+|  +----------+-----------+                                            |
++--------------+-------------------------------------------------------+
+|               |                                                      |
+|  HTTP (Engine API over Unix socket)                                  |
+|               v                                                      |
++----------------------------------------------------------------------+
+|               Docker Engine (on host)                                |
+|                                                                      |
+|  +----------------------+        +----------------------+            |
+|  |      REST API        |------->|      dockerd         |            |
+|  | (Engine HTTP API)    |        |     (daemon)         |            |
+|  +----------------------+        +----------+-----------+            |
+|                                    |                                 |
+|                                    v                                 |
+|              +-------------------------------------------+           |
+|              | Images, containers, networks, volumes     |           |
+|              +-------------------------------------------+           |
++----------------------------------------------------------------------+
 ```
 
 ---
@@ -121,16 +130,27 @@ docker -H tcp://192.168.1.50:2375 run --rm hello-world
 ## Design: remote client → Engine
 
 ```
-┌──────────────────┐              ┌──────────────────────────┐
-│  Another machine │              │   Remote Docker host     │
-│                  │   TCP        │                          │
-│  ┌────────────┐  │  :2375      │  ┌──────────┐ ┌────────┐ │
-│  │ Docker CLI │──┼────────────▶│  │ REST API │─│dockerd │ │
-│  └────────────┘  │  or :2376   │  └──────────┘ └────────┘ │
-│                  │  (TLS)      │                          │
-└──────────────────┘              └──────────────────────────┘
++----------------------------------------------------------------------+
+|                  Another machine                                     |
+|                                                                      |
+|  +----------------------+                                            |
+|  |    Docker CLI        |                                            |
+|  +----------+-----------+                                            |
++--------------+-------------------------------------------------------+
+|               |                                                      |
+|  TCP :2375 (plain) or :2376 (TLS)                                    |
+|               v                                                      |
++----------------------------------------------------------------------+
+|                  Remote Docker host                                  |
+|                                                                      |
+|  +----------------------+        +----------------------+            |
+|  |      REST API        |------->|      dockerd         |            |
+|  +----------------------+        +----------------------+            |
++----------------------------------------------------------------------+
+```
 
-  docker -H tcp://remote:2375 ps
+```bash
+docker -H tcp://remote:2375 ps
 ```
 
 ---
@@ -184,25 +204,21 @@ When Docker creates a container, the daemon asks the kernel to place that contai
 ### How it looks
 
 ```
-            Host kernel (shared)
-  ┌──────────────────────────────────────────────────┐
-  │                                                  │
-  │  ┌─────────────────────┐  ┌──────────────────┐   │
-  │  │   Container A       │  │  Container B     │   │
-  │  │                     │  │                  │   │
-  │  │  PID namespace  (1) │  │  PID namespace   │   │
-  │  │  NET namespace      │  │  NET namespace   │   │
-  │  │  MNT namespace      │  │  MNT namespace   │   │
-  │  │  UTS namespace      │  │  UTS namespace   │   │
-  │  │  IPC namespace      │  │  IPC namespace   │   │
-  │  │                     │  │                  │   │
-  │  │  Sees: its own PIDs,│  │  Sees: its own   │   │
-  │  │  its own network,   │  │  PIDs, network,  │   │
-  │  │  its own mounts     │  │  mounts          │   │
-  │  └─────────────────────┘  └──────────────────┘   │
-  │                                                  │
-  │  Host still sees ALL processes, all networks     │
-  └──────────────────────────────────────────────────┘
+                        Host kernel (shared)
++----------------------------------------------------------------------+
+|                                                                      |
+| +------------------------+      +------------------------+           |
+| |      Container A       |      |      Container B       |           |
+| |                        |      |                        |           |
+| | PID, NET, MNT, UTS, IPC|      | PID, NET, MNT, UTS, IPC|           |
+| | namespaces (own view)  |      | namespaces (own view)  |           |
+| |                        |      |                        |           |
+| | Own PIDs, network,     |      | Own PIDs, network,     |           |
+| | mounts, hostname, IPC  |      | mounts, hostname, IPC  |           |
+| +------------------------+      +------------------------+           |
+|                                                                      |
+| Host still sees all processes and all networks                       |
++----------------------------------------------------------------------+
 ```
 
 - **Container A** and **Container B** each live inside their **own** set of namespaces.

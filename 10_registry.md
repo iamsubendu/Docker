@@ -36,13 +36,13 @@ Think of it like Git hosting:
 **Pull / push vs Engine:**
 
 ```
-  ┌──────────────────────────┐          ┌─────────────────────┐
-  │  Docker Engine (host)    │          │      Registry       │
-  │                          │  pull    │  (Docker Hub /      │
-  │       dockerd            │◀─────────│   GHCR / ECR / …)  │
-  │                          │  push    │                     │
-  │                          │─────────▶│                     │
-  └──────────────────────────┘           └─────────────────────┘
+  +--------------------------+              +--------------------------+
+  | Docker Engine (host)     |              | Registry                 |
+  |                          | pull         | (Docker Hub / GHCR /     |
+  | dockerd                  |<------------ | ECR / ...)               |
+  |                          | push         |                          |
+  |                          |------------> |                          |
+  +--------------------------+              +--------------------------+
 ```
 
 `docker pull` asks the **daemon** to fetch layers from the registry; `docker push` uploads local image data the daemon manages.

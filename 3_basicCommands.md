@@ -22,7 +22,7 @@ Every `docker …` command uses the **CLI** to call the Engine **REST API** on t
 
 ```
   You type                                Docker Engine
-  docker run / ps / ...  ──▶  Docker CLI  ── Engine API ──▶  daemon
+  docker run / ps / ...  -->  Docker CLI  --> Engine API -->  daemon
 ```
 
 Details: [11_engine.md](11_engine.md).

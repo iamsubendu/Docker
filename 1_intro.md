@@ -181,31 +181,32 @@ A company like Netflix might run **thousands of containers** across **hundreds o
 Docker uses a **client-server architecture** with three main components:
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Docker Host                              │
-│  ┌─────────────────┐    ┌─────────────────────────────────────┐ │
-│  │  Docker Client  │    │         Docker Daemon (dockerd)     │ │
-│  │                 │    │  ┌─────────┐  ┌─────────┐           │ │
-│  │  docker build   │──▶│  │Container│  │Container│           │ │
-│  │  docker pull    │    │  │   1     │  │   2     │           │ │
-│  │  docker run     │    │  └─────────┘  └─────────┘           │ │
-│  │                 │    │  ┌─────────────────────────┐        │ │
-│  └─────────────────┘    │  │   Images / Volumes      │        │ │
-│                         │  └─────────────────────────┘        │ │
-│                         └─────────────────────────────────────┘ │
-└─────────────────────────────────────────────────────────────────┘
-                                    │
-                                    ▼
-                         ┌─────────────────────┐
-                         │   Docker Registry   │
-                         │   (Docker Hub)      │
-                         └─────────────────────┘
++-------------------------------------------------------------------+
+|                      Docker Host                                  |
+|                                                                   |
+|  +-------------------+        +-------------------------------+   |
+|  | Docker Client     |        | Docker Daemon (dockerd)       |   |
+|  |                   |        |  +---------+  +---------+     |   |
+|  | docker build      |------->|  |Container|  |Container|     |   |
+|  | docker pull       |        |  |    1    |  |    2    |     |   |
+|  | docker run        |        |  +---------+  +---------+     |   |
+|  |                   |        |  +-------------------------+  |   |
+|  +-------------------+        |  | Images / Volumes        |  |   |
+|                               |  +-------------------------+  |   |
+|                               +-------------------------------+   |
++-------------------------------------------------------------------+
+                                 |
+                                 v
+                    +---------------------------+
+                    | Docker Registry           |
+                    | (e.g. Docker Hub)         |
+                    +---------------------------+
 ```
 
 **Same architecture as a flow (CLI → REST API → daemon):**
 
 ```
-  Docker CLI ──── HTTP ────▶ REST API ────▶ Docker daemon
+  Docker CLI ---- HTTP ----> REST API ----> Docker daemon
    (docker)                 (Engine API)     (dockerd)
 ```
 

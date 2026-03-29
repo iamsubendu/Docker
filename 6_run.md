@@ -31,11 +31,11 @@ docker run -it kodekloud/simple-prompt-docker
 **Host port → container port** (Docker Engine publishes traffic from the host into the container’s network namespace):
 
 ```
-  ┌──────────────┐       ┌──────────────┐       ┌──────────────┐
-  │   Browser    │       │  Docker host │       │  Container   │
-  │ localhost:80 │─────▶│   port 80    │─────▶│  port 5000   │
-  └──────────────┘       └──────────────┘       └──────────────┘
-                          -p 80:5000
+  +--------------+        +--------------+        +--------------+
+  |   Browser    |        | Docker host  |        |  Container   |
+  | localhost:80 |------->|   port 80    |------->|  port 5000   |
+  +--------------+        +--------------+        +--------------+
+                                    -p 80:5000
 ```
 
 ```bash
