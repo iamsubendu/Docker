@@ -12,6 +12,7 @@ Docker is a platform that lets you **package an application with everything it n
 - [Where are containers hosted?](#where-are-containers-hosted-and-how-do-they-manage-so-many-containers)
 - [Docker Architecture](#docker-architecture)
 - [Docker Engine (CLI, API, daemon) — deeper dive](11_engine.md)
+- [Docker storage (volumes, bind mounts)](12_storage.md)
 - [Docker containers share the host kernel](#docker-containers-share-the-host-kernel)
 - [Docker vs Virtual Machines](#docker-vs-virtual-machines)
 - [Docker in Dev + DevOps](#docker-in-dev--devops)

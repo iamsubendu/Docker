@@ -1,5 +1,14 @@
 # Docker images
 
+## Table of Contents
+
+- [What am I containerizing?](#what-am-i-containerizing)
+- [Layered architecture (diffs, cache, size — in 12_storage.md)](12_storage.md#layered-architecture-diffs-size-and-cache-reuse)
+- [How to create my own image?](#how-to-create-my-own-image)
+- [CMD vs ENTRYPOINT](#cmd-vs-entrypoint)
+
+---
+
 ## What am I containerizing?
 
 You are containerizing **whatever your application needs to run**:
@@ -20,6 +29,8 @@ You are containerizing **whatever your application needs to run**:
 ---
 
 ## How to create my own image?
+
+**Layered images (diffs, size, cache reuse, two-Dockerfile example, diagrams)** live in [12_storage.md — Layered architecture: diffs, size, and cache reuse](12_storage.md#layered-architecture-diffs-size-and-cache-reuse). That ties layers to **on-disk** storage under **`/var/lib/docker`** (e.g. **`overlay2/`**).
 
 **1. Create a Dockerfile** in your project directory. It describes the image (base image, files to copy, commands to run).
 
