@@ -69,11 +69,13 @@ docker stop mysql
 docker rm mysql
 ```
 
-To persist data, map a host directory into the container:
+To persist data, map a host directory into the container (**bind mount**):
 
 ```bash
-docker run -v /opt/datadir:/var/lib/mysql mysql
+docker run --mount type=bind,source=/opt/datadir,target=/var/lib/mysql mysql
 ```
+
+Short form (same idea, common in older docs): `docker run -v /opt/datadir:/var/lib/mysql mysql`. See [12_storage.md](12_storage.md).
 
 - Data is stored in the host directory `/opt/datadir` and persists even if you remove the container.
 

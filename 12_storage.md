@@ -1,6 +1,6 @@
 # Docker storage
 
-Containers are **easy to throw away** — but **data** (databases, uploads, config you change at run time) must live somewhere **stable**. Docker storage is about **where bytes live** on the **host**, how the **image** stays read-only, and how **volumes** and **bind mounts** attach folders into a container.
+Containers are **easy to throw away** — but **data** (databases, uploads, config you change at run time) must live somewhere **stable**. This page explains **where files go** on your computer, how the **image** stays read-only, and how to **connect folders** into a container so important data **does not disappear** when the container is removed.
 
 ## Table of Contents
 
@@ -9,7 +9,7 @@ Containers are **easy to throw away** — but **data** (databases, uploads, conf
 - [Image layers vs the container writable layer](#image-layers-vs-the-container-writable-layer)
 - [Layered architecture: diffs, size, and cache reuse](#layered-architecture-diffs-size-and-cache-reuse)
 - [Docker volumes: store files that survive container removal](#docker-volumes-store-files-that-survive-container-removal)
-- [Two types of mounting: volume vs bind](#two-types-of-mounting-volume-vs-bind)
+- [Two ways to hook up storage: volume vs bind](#two-ways-to-hook-up-storage-volume-vs-bind)
 - [Bind mounts, named volumes, and tmpfs](#bind-mounts-named-volumes-and-tmpfs)
 - [Compare at a glance](#compare-at-a-glance)
 - [Common commands](#common-commands)
@@ -102,7 +102,7 @@ When you **remove** the container (`docker rm`, or `docker compose down` without
 A Docker **image** is not one big file. It is a **stack of layers**. Each layer is the **result of one Dockerfile instruction** (or one build step). Think of it as **changes on top of the parent**: step 2 builds on step 1, and so on.
 
 - **Each layer adds what changed** compared to the layer below (new files, changed files, packages installed by `RUN`, and so on). Docker stores that step’s **filesystem state** for that layer.
-- **Size:** the image’s total size is related to **all layers together**. Use **`docker history <image>`** to see **each layer** and its size; **`docker images`** shows the **total** size. Bigger layers (big `COPY`, fat `RUN`) push the total up.
+- **Size:** the image’s total size is related to **all layers together**. Use **`docker history <image>`** to list **each layer** and its size (same steps as the **Dockerfile** build, newest layers first — see [7_images.md — docker history](7_images.md#docker-history-build-steps-and-layers)). **`docker images`** shows the **total** size. Bigger layers (big `COPY`, fat `RUN`) push the total up.
 - **On disk:** shared layers are **stored once** under the Engine storage area (for example **`overlay2/`** under [`/var/lib/docker`](#host-layout-varlibdocker-linux-engine)). When two images reuse the same layer, they **point at** the same stored data — you do **not** pay twice for identical layers.
 - **Read-only:** once built, image layers are **read-only**; a **running container** adds a thin writable layer on top (see [Image layers vs the container writable layer](#image-layers-vs-the-container-writable-layer) above).
 
@@ -195,115 +195,136 @@ So you **pay full cost** only for the **new** layers; the **shared** base layers
 
 ## Docker volumes: store files that survive container removal
 
-A **Docker volume** is **storage on the host** that Docker **creates and manages**. You give it a **name** (for example `mydata` or `pgdata`). You **attach** it to a **path inside the container** when you run the container. Anything written **under that path** is stored **in the volume**, **not** in the container’s thin writable layer.
+A **Docker volume** is a **named place to store files** on your computer. **Docker** creates that place and keeps track of it. You pick a **name** like `mydata`.
+
+When you start a container, you **connect** that named place to **one folder inside the container** (for example `/data`). Anything the app saves **in that folder** is really saved **in the volume**. It is **not** stored only in the container’s thin layer (which goes away when the container is deleted).
 
 **Why use it**
 
-- If you only write inside the container filesystem **without** a volume or bind mount, those files **disappear** when the container is **removed** (`docker rm`).
-- If you write to a **mounted volume path**, the bytes live in the volume’s storage. **Destroying the container does not delete the volume** (unless you remove the volume on purpose with `docker volume rm` or `docker compose down -v`).
+- If the app writes **only** to the normal container disk, those files are **lost** when you delete the container.
+- If the app writes to a folder that is **connected to a volume**, the files **stay** after the container is gone. The volume stays until **you** delete it (`docker volume rm` or `docker compose down -v`).
 
-**Flow in plain words**
+**Simple flow**
 
-1. Create a volume (optional — Docker can create it on first use): `docker volume create mydata`.
-2. Run a container with **`--mount type=volume,source=mydata,target=/data`** (named volume + path **inside** the container).
-3. The app saves files under **`/data`** — they are stored in **`mydata`** on the host (under Engine’s area — see [`volumes/` under `/var/lib/docker`](#host-layout-varlibdocker-linux-engine)).
-4. **`docker stop`** / **`docker rm`** the container — **files in the volume stay**.
-5. Start a **new** container with the **same** **`--mount`** — you see the **same** files again.
+1. **Create a name** (optional the first time — Docker can create it when you run): `docker volume create mydata`.
+2. **Start the container** and **connect** the volume to a folder inside it. The command uses **`--mount`** — see [What the --mount parts mean](#what-the--mount-parts-mean) below.
+3. The app writes to **`/data`** (or whatever folder you chose). The files land in **`mydata`** on the host (Docker stores them under its own area — see [`volumes/` under `/var/lib/docker`](#host-layout-varlibdocker-linux-engine)).
+4. You **delete** the container. **The volume and its files are still there.**
+5. You **start another container** with the **same** volume **connected the same way**. **You still see the same files.**
 
 ```
 +----------------------------------------------------------------------+
-|  Container A (removed)       VOLUME "mydata" on host (kept)          |
-|  writes -> /data ----------------------> stored here                 |
+|  Container 1 (deleted)     VOLUME "mydata" on computer (kept)        |
+|  saves in /data  --------------------->  stored in mydata            |
 |                                                                      |
-|  Container B (new)   same --mount volume mydata -> /data again       |
+|  Container 2 (new)      reuse mydata at /data (same files)           |
 +----------------------------------------------------------------------+
 ```
 
-**Named volume vs bind mount:** the full comparison with **examples** is in [Two types of mounting: volume vs bind](#two-types-of-mounting-volume-vs-bind) below.
+**Volume vs bind:** see [Two ways to hook up storage: volume vs bind](#two-ways-to-hook-up-storage-volume-vs-bind) below.
 
 ---
 
-## Two types of mounting: volume vs bind
+## Two ways to hook up storage: volume vs bind
 
-Mounting means: **attach** storage from the **host** to a **directory path inside the container** so reads/writes at that path use that storage. The two main ways are **volume mounting** (Docker-managed storage) and **bind mounting** (a folder **you** choose).
+**“Hook up”** here means: **pick storage on the host** and **show it as a folder inside the container** so the app can read and write there.
 
-| | **Volume mounting** (named volume) | **Bind mounting** |
-| --- | --- | --- |
-| **`--mount` (preferred)** | `type=volume,source=NAME,target=/path/in/container` | `type=bind,source=/host/path,target=/path/in/container` |
-| **Shorthand `-v`** | `-v NAME:/path/in/container` | `-v /host/path:/path/in/container` |
-| **Who owns the host folder** | **Docker** creates it under **`/var/lib/docker/volumes/...`** (see [Host layout](#host-layout-varlibdocker-linux-engine)) | **You** — any folder on your machine |
-| **Good for** | Databases, uploads, **“I don’t care where on disk”** | **Dev** (edit code on the host), **exact path** you need |
-| **Survives `docker rm`?** | **Yes** (volume stays until you remove it) | **Yes** (files always stayed on your host) |
+There are **two common ways**:
 
-### 1. Volume mounting (named volume)
+1. **Volume (named volume)** — You give Docker a **short name**. Docker picks **where** on disk to put the files. You usually **do not** need to know the full path.
+2. **Bind mount** — You pick a **folder on your computer** (for example your project folder). That **exact** folder appears inside the container. Good when you want to **edit files on your laptop** and see them in the container right away.
 
-You give a **name**; Docker creates and tracks the real directory. **Preferred pattern:** **`--mount type=volume,source=VOLUME_NAME,target=/path/in/container`**
+**After you delete the container**, files in **both** setups **stay on the host** (until you delete the volume or the folder).
 
-**Example — create a volume, run a container, write a file**
+### What the --mount parts mean
+
+The **`--mount`** line is **one flag** with **pieces** separated by commas:
+
+| Part | Simple meaning |
+| --- | --- |
+| **`type=volume`** or **`type=bind`** | **volume** = use a **named** Docker volume. **bind** = use a **folder path** you choose. |
+| **`source=...`** | **Where the data comes from.** For a volume, this is the **name** (e.g. `app-data`). For a bind, this is the **folder on your computer** (e.g. `$(pwd)/demo-data`). |
+| **`target=...`** | **Which folder inside the container** should show that storage (e.g. `/data`). |
+| **`readonly`** (bind only, optional) | The container can **read** but **not change** the files. |
+
+**Short form `-v`:** many guides use **`-v name:/data`** (volume) or **`-v /my/folder:/data`** (bind). It does the same job; **`--mount`** spells out each piece more clearly.
+
+### 1. Volume (named volume)
+
+**Idea:** create a **name**, then **connect** it to a folder inside the container.
+
+**Example — write a file, read it back**
 
 ```bash
+# 1) Create storage named app-data
 docker volume create app-data
+
+# 2) Run a container: connect app-data to folder /data inside the box
 docker run --rm --mount type=volume,source=app-data,target=/data alpine sh -c "echo hello > /data/file.txt"
+
+# 3) Run again with the same connection — the file is still there
 docker run --rm --mount type=volume,source=app-data,target=/data alpine cat /data/file.txt
 ```
 
-Expected output from the last line:
+**What `--rm` means (not the same as deleting your data):** **`--rm`** is an option on **`docker run`**. It means **remove the container when it exits** — Docker throws away that **container** after the command finishes so you do not collect **stopped** containers. It does **not** mean “remove the volume.” The **`app-data`** volume and its files **stay** until you run **`docker volume rm`**.
+
+You should see:
 
 ```text
 hello
 ```
 
-The file lives in the **`app-data`** volume. **`docker rm`** the container — **`app-data`** is still there. Use **`docker volume inspect app-data`** to see **Mountpoint** on the host.
+The file is **inside** the **`app-data`** volume. Delete the container — **`app-data`** remains. **`docker volume inspect app-data`** shows you **where** Docker stored it on disk.
 
-**Shorthand (same mounts):** `-v app-data:/data` — still common in tutorials; **`--mount`** is clearer and easier to extend (read-only, labels, etc.).
+**Same thing, shorter:** `-v app-data:/data`
 
-### 2. Bind mounting
+### 2. Bind mount
 
-You give a **host path** (your project folder, a data dir, etc.) and where it should appear in the container. **Preferred pattern:** **`--mount type=bind,source=/path/on/host,target=/path/in/container`** (use an **absolute** `source` when you can; relative paths are resolved from the build/run context).
+**Idea:** **point** a folder on **your computer** at a folder **inside** the container.
 
-**Example — project folder on your machine into the container**
+**Example — file on your computer, read inside the container**
 
 **Linux / macOS (Git Bash):**
 
 ```bash
 mkdir -p ./demo-data
 echo "from host" > ./demo-data/note.txt
+
+# Connect folder demo-data (on your machine) to /data (inside the container)
 docker run --rm --mount type=bind,source="$(pwd)/demo-data",target=/data alpine cat /data/note.txt
 ```
 
-Expected output:
+You should see:
 
 ```text
 from host
 ```
 
-Edits on the host in **`demo-data`** show up in **`/data`** in the container, and the other way around.
+Change a file **on your computer** in **`demo-data`** — the change shows up **inside** the container at **`/data`**, and the other way around.
 
-**Read-only bind** (container can read but not write) — add **`,readonly`** to the **`--mount`**:
+**Read-only** (container can look but not change files) — add **`,readonly`**:
 
 ```bash
 docker run --rm --mount type=bind,source="$(pwd)/demo-data",target=/data,readonly alpine ls /data
 ```
 
-**Shorthand:** `-v "$(pwd)/demo-data:/data:ro"`
+**Same thing, shorter:** `-v "$(pwd)/demo-data:/data:ro"`
 
-On **Windows**, use a path Docker can see (often the project under WSL2 or a shared drive); **`source=`** must be a path the Engine can read.
+On **Windows**, pick a folder Docker can reach (often your project in **WSL2** or a shared drive).
 
 ---
 
 ## Bind mounts, named volumes, and tmpfs
 
-**Bind mount** — same idea as [bind mounting](#two-types-of-mounting-volume-vs-bind) above: **you** pick the host path.
-
-**Named volume** — same idea as [volume mounting](#two-types-of-mounting-volume-vs-bind) above: **you** pick the **name**; Docker picks the host path.
+**Bind** and **named volume** are explained above in [Two ways to hook up storage](#two-ways-to-hook-up-storage-volume-vs-bind).
 
 **Anonymous volume**
 
-- A volume with a **random name** Docker creates when you use a **`VOLUME`** in a Dockerfile or a mount with only a destination (anonymous volume). Same persistence idea as a named volume, but **harder to reuse** by name — prefer **named** volumes for anything important.
+- Sometimes Docker makes a volume **without** a name you chose. Same idea as a named volume for saving files, but **harder to find again** — use a **named** volume when you care about the data.
 
-**tmpfs mount**
+**tmpfs**
 
-- Storage in **RAM**, not on the host disk. **Gone** when the container stops. Use for **sensitive** or **temporary** scratch data when you want **no** disk footprint (and accept size limits).
+- Data in **memory (RAM)**, not on the disk. **Gone** when the container stops. For **short-lived** or **very temporary** stuff only.
 
 ---
 
@@ -344,13 +365,15 @@ docker volume prune
 docker inspect CONTAINER_NAME
 ```
 
-Look for **`Mounts`** in the JSON — **Source** is the host side, **Destination** is inside the container.
+In the JSON, open **`Mounts`**: **`Source`** is on your computer, **`Destination`** is inside the container.
 
 ---
 
 ## Examples with `docker run`
 
-Step-by-step **volume** vs **bind** examples are in [Two types of mounting: volume vs bind](#two-types-of-mounting-volume-vs-bind). Below are short **`--mount`** snippets (preferred). **`-v`** is still valid shorthand: `-v SRC:DST` or `-v NAME:/path` for volumes.
+The **full walkthrough** is in [Two ways to hook up storage](#two-ways-to-hook-up-storage-volume-vs-bind). Below are **small copy-paste** commands. **`-v`** is a **short** form of the same thing.
+
+**`--rm` in these examples:** **`docker run --rm`** tells Docker to **delete only the container** after the command stops. Your **volumes** and **bind-mounted folders** are **not** removed. (This is different from typing **`docker rm`** as its own command — here **`rm`** is just a flag name on **`run`**.)
 
 **Bind mount** — host folder `./data` appears as `/data` in the container:
 
@@ -377,13 +400,13 @@ docker run --rm --mount type=bind,source="$(pwd)/config",target=/app/config,read
 docker run --rm --mount type=bind,source="$(pwd)/html",target=/usr/share/nginx/html,readonly nginx:alpine
 ```
 
-**tmpfs** (RAM only; optional size — syntax may vary by Engine version):
+**tmpfs** (RAM only — data cleared when the container stops):
 
 ```bash
 docker run --rm --mount type=tmpfs,target=/tmp alpine
 ```
 
-**Legacy `-v` equivalents:** `docker run -v "$(pwd)/data:/data" ...`, `docker run -v webuploads:/var/www/uploads ...`, `docker run -v "$(pwd)/config:/app/config:ro" ...`, `docker run --tmpfs /tmp ...`.
+**Older short style (`-v`):** same ideas as above, written as **`docker run -v ...`** in many guides.
 
 ---
 
@@ -411,3 +434,4 @@ Compose declares mounts in YAML. You will see **`volumes:`** under services and 
 - [11_engine.md — MNT namespace](11_engine.md#container-isolation-linux-namespaces)
 - [11_engine.md — Resource limits (cgroups)](11_engine.md#resource-limits-cgroups-cpu-and-memory) — CPU and memory caps
 - [10_registry.md](10_registry.md) — where images are stored and pulled from
+- [13_networking.md](13_networking.md) — default `bridge` / `host` / `none` networks (separate from volumes, but often used together)

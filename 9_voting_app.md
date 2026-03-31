@@ -158,14 +158,16 @@ docker run -d --name db --network vote-net \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=example \
   -e POSTGRES_DB=postgres \
-  -v pgdata:/var/lib/postgresql/data \
+  --mount type=volume,source=pgdata,target=/var/lib/postgresql/data \
   postgres:15-alpine
 ```
+
+**`-v pgdata:/var/lib/postgresql/data`** is the **short** form of the same volume mount (older style; same effect). See [12_storage.md](12_storage.md).
 
 On **Windows PowerShell**, run the `db` line as a **single line** (or use `` ` `` for line continuation):
 
 ```powershell
-docker run -d --name db --network vote-net -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=example -e POSTGRES_DB=postgres -v pgdata:/var/lib/postgresql/data postgres:15-alpine
+docker run -d --name db --network vote-net -e POSTGRES_USER=postgres -e POSTGRES_PASSWORD=example -e POSTGRES_DB=postgres --mount type=volume,source=pgdata,target=/var/lib/postgresql/data postgres:15-alpine
 ```
 
 **3. Build the three app images**

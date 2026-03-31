@@ -41,6 +41,8 @@ See [9_voting_app.md — PostgreSQL username and password](9_voting_app.md#postg
 
 ## PostgreSQL volumes (why two `volumes` blocks?)
 
+**Note:** In **`docker run`**, **`--mount`** is the preferred style; **`-v`** is a short form (see [12_storage.md](12_storage.md)). **Compose** uses YAML **`volumes:`** under services — that is **not** the same as the **`docker run -v`** flag.
+
 **Under `db:`**
 
 ```yaml

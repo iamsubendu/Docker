@@ -395,7 +395,7 @@ Read **`pgdata:/var/lib/postgresql/data`** as **`host_side` `:` `path_inside_con
 
 **Removing data**
 
-- `docker compose down` keeps named volumes. Add **`-v`** to remove them: `docker compose down -v`.
+- `docker compose down` keeps named volumes. Add **`-v`** to remove them: `docker compose down -v`. (**This `-v` is Compose’s “remove volumes” flag on `down`**, not the same as **`docker run -v`** for mounting — see [12_storage.md](12_storage.md) for `run` + `--mount` vs `-v`.)
 
 ### Quick recap
 
@@ -403,4 +403,4 @@ Read **`pgdata:/var/lib/postgresql/data`** as **`host_side` `:` `path_inside_con
 - **Named volumes** — `name:/path` maps Docker-managed storage by **name** (good for DB persistence).
 - **PostgreSQL in Compose** — set **`POSTGRES_PASSWORD`** (required on first init), plus **`POSTGRES_USER`** and **`POSTGRES_DB`**; app services need the **same** credentials (see the **`db:`** example under **Named volume: two `volumes` blocks** above).
 
-For more commands, see [3_basicCommands.md](3_basicCommands.md#docker-compose). For a hands-on demo, see [4_demo.md](4_demo.md) (Demo 9). A full stack with Postgres named volumes is in [VOTING_README.md](VOTING_README.md).
+For more commands, see [3_commands.md](3_commands.md#docker-compose). For a hands-on demo, see [4_demo.md](4_demo.md) (Demo 9). A full stack with Postgres named volumes is in [VOTING_README.md](VOTING_README.md).

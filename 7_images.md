@@ -5,6 +5,7 @@
 - [What am I containerizing?](#what-am-i-containerizing)
 - [Layered architecture (diffs, cache, size — in 12_storage.md)](12_storage.md#layered-architecture-diffs-size-and-cache-reuse)
 - [How to create my own image?](#how-to-create-my-own-image)
+- [`docker history` (build steps and layers)](#docker-history-build-steps-and-layers)
 - [CMD vs ENTRYPOINT](#cmd-vs-entrypoint)
 
 ---
@@ -114,6 +115,16 @@ docker build . -f Dockerfile -t appName
 
 - `-t my-app:1.0` — name and tag for the image.
 - `.` — build context (current directory when Dockerfile is named `Dockerfile` and in the current folder).
+
+### docker history (build steps and layers)
+
+After **`docker build`**, **`docker history <image>`** lists **every layer** that makes up that image — in practice, **one row per Dockerfile step** (plus layers that came from the **base image**). Order is **newest first** (top of the list = last instructions; bottom = earlier steps / base). Each row shows **size** and a **comment** so you can see **which instruction** created which layer.
+
+```bash
+docker history my-app:1.0
+```
+
+Use this to **review** the build, spot **large** layers, or match layers to your **Dockerfile**. **Total** size for the image is also in **`docker images`**. How layers sit on disk is in [12_storage.md — Layered architecture](12_storage.md#layered-architecture-diffs-size-and-cache-reuse).
 
 **3. Push the image to a registry** (e.g. Docker Hub) so others or other machines can pull it:
 

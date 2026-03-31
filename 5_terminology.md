@@ -97,7 +97,7 @@ Quick reference for technical terms, abbreviations, and flags used in Docker.
 | `-d` | `--detach` | Run in background (detached mode) |
 | `-p` | `--publish` | Port mapping `host:container` |
 | `-P` | `--publish-all` | Publish all exposed ports to random ports |
-| `-v` | `--volume` | Mount volume or bind mount |
+| `-v` | `--volume` | Short form for volume/bind on **`docker run`**; prefer **`--mount`** (see [12_storage.md](12_storage.md)) |
 | `-e` | `--env` | Set environment variable |
 | `-w` | `--workdir` | Set working directory inside container |
 | `-u` | `--user` | Run as specific user |
@@ -222,12 +222,18 @@ docker rmi $(docker images -q)
 
 ## Volume Mount Examples
 
+Prefer **`docker run --mount ...`** for new commands; **`-v`** below is the **short** form (same effect). Details: [12_storage.md](12_storage.md).
+
 | Command | Meaning |
 |---------|---------|
-| `-v my-vol:/app` | Named volume "my-vol" mounted at /app |
-| `-v /host/path:/container/path` | Bind mount host directory |
-| `-v $(pwd):/app` | Bind mount current directory |
-| `-v /host/path:/container/path:ro` | Read-only bind mount |
+| `--mount type=volume,source=my-vol,target=/app` | Named volume `my-vol` at `/app` in the container |
+| `--mount type=bind,source=/host/path,target=/container/path` | Bind mount host directory |
+| `--mount type=bind,source=$(pwd),target=/app` | Bind mount current directory |
+| `--mount type=bind,source=/host/path,target=/container/path,readonly` | Read-only bind mount |
+| `-v my-vol:/app` | Short form of volume mount |
+| `-v /host/path:/container/path` | Short form of bind mount |
+| `-v $(pwd):/app` | Short form — current directory |
+| `-v /host/path:/container/path:ro` | Short form — read-only |
 
 ---
 
