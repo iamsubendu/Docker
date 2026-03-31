@@ -57,6 +57,8 @@ sudo apt-get install -y docker-ce docker-ce-cli containerd.io docker-buildx-plug
 4. Restart your computer if prompted
 5. Launch Docker Desktop and wait for it to start
 
+If you also use **Oracle VirtualBox** on the same PC, read [14_virtualbox_hyperv.md](14_virtualbox_hyperv.md) — **VirtualBox** and **Hyper-V / WSL2** (used by Docker Desktop) often **do not mix** cleanly.
+
 ---
 
 ## Post-Installation Setup
@@ -120,6 +122,7 @@ docker info
 | `permission denied` when running docker | Run `sudo usermod -aG docker $USER` and log out/in                            |
 | `Cannot connect to the Docker daemon`   | Ensure Docker Desktop is running, or start with `sudo systemctl start docker` |
 | WSL2 errors on Windows                  | Run `wsl --update` in PowerShell as admin                                     |
+| VirtualBox + Hyper-V / Docker conflicts | See [14_virtualbox_hyperv.md](14_virtualbox_hyperv.md)                       |
 | Slow performance on Mac/Windows         | Allocate more RAM/CPU in Docker Desktop Settings > Resources                  |
 | `no space left on device`               | Run `docker system prune -a` to clean unused data                             |
 

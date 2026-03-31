@@ -40,6 +40,9 @@ Hands-on CLI reference for Docker Engine. For **concepts** (containers vs VMs, t
 | Engine, API, daemon, remote hosts | [11_engine.md](11_engine.md) |
 | Layers, volumes, bind mounts, `--mount` vs `-v` | [12_storage.md](12_storage.md) |
 | Default networks (`bridge`, `host`, `none`), DNS on user-defined networks | [13_networking.md](13_networking.md) |
+| VirtualBox vs Hyper-V on Windows (Docker Desktop / WSL2) | [14_virtualbox_hyperv.md](14_virtualbox_hyperv.md) |
+| Orchestration (Compose vs Swarm vs Kubernetes) | [15_orchestrate.md](15_orchestrate.md) |
+| Kubernetes concepts (`kubectl`, Pods, Deployments) | [16_kubernetes.md](16_kubernetes.md) |
 
 ---
 
